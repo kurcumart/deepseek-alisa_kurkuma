@@ -20,7 +20,19 @@ async def main(request: Request):
             "messages": [{"role": "user", "content": user_text}],
         }
     )
-    answer = response.json()["choices"][0]["message"]["content"]
+    try:
+    data = response.json()
+    # Проверим, есть ли choices
+    if "choices" in data:
+        answer = data["choices"][0]["message"]["content"]
+    else:
+        # Если нет choices, значит пришла ошибка
+        answer = f"Ошибка от DeepSeek: {data}"
+        # Дополнительно распечатаем в логи Render
+        print("Ответ от DeepSeek не содержит choices:", data)
+except Exception as e:
+    answer = f"Ошибка при разборе ответа: {e}"
+    print("Исключение:", e)
 
     return {
         "version": body["version"],
