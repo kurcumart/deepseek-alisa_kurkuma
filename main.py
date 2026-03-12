@@ -1,58 +1,13 @@
 import os
 from fastapi import FastAPI, Request
-import requests
-
-app = FastAPI()
-
-DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions"
-DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
-text
-DEEPSEEK_API_KEY = sk-f049b9aec566447eacc3433371d4a16b
-@app.post("/")
-async def main(request: Request):
-    body = await request.json()
-    user_text = body["request"]["original_utterance"]
-
-    response = requests.post(
-        DEEPSEEK_API_URL,
-        headers={"Authorization": f"Bearer {DEEPSEEK_API_KEY}"},
-        json={
-            "model": "deepseek-chat",
-            "messages": [{"role": "user", "content": user_text}],
-        }
-    )
-    try:
-    data = response.json()
-    # Проверим, есть ли choices
-    if "choices" in data:
-        answer = data["choices"][0]["message"]["content"]
-    else:
-        # Если нет choices, значит пришла ошибка
-        answer = f"Ошибка от DeepSeek: {data}"
-        # Дополнительно распечатаем в логи Render
-        print("Ответ от DeepSeek не содержит choices:", data)
-except Exception as e:
-    answer = f"Ошибка при разборе ответа: {e}"
-    print("Исключение:", e)
-
-    return {
-        "version": body["version"],
-        "session": body["session"],
-        "response": {
-            "end_session": False,
-            "text": answer
-        }
-    }
-from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 import httpx
-import os
 
 app = FastAPI()
 
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
 
-@app.post("/")  # <- ЭТО ВАЖНО! Именно POST
+@app.post("/")
 async def alice_webhook(request: Request):
     try:
         alice_request = await request.json()
@@ -61,7 +16,7 @@ async def alice_webhook(request: Request):
         if not user_text:
             user_text = "привет"
         
-        # Здесь запрос к DeepSeek
+        # Запрос к DeepSeek
         async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.post(
                 "https://api.deepseek.com/v1/chat/completions",
@@ -72,7 +27,7 @@ async def alice_webhook(request: Request):
                 json={
                     "model": "deepseek-chat",
                     "messages": [
-                        {"role": "system", "content": "Ты добрый собеседник Джой."},
+                        {"role": "system", "content": "Ты добрый и заботливый собеседник. Отвечай тепло, коротко и поддерживающе. Твое имя Джой."},
                         {"role": "user", "content": user_text}
                     ],
                     "max_tokens": 300
@@ -101,6 +56,6 @@ async def alice_webhook(request: Request):
     
     return JSONResponse(content=alice_response)
 
-@app.get("/")  # Это для проверки в браузере
+@app.get("/")
 async def health_check():
     return {"status": "ok", "message": "Сервер работает. Жду POST-запросы от Алисы"}
